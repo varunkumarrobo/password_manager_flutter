@@ -1,7 +1,9 @@
 
 import 'package:flutter/material.dart';
-import 'package:mini_app/screens/sign_up.dart';
-import '../services/db_service.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:mini_app/screens/authentication.dart';
+import 'package:mini_app/utilites/pawrdcrypt.dart';
+import '../services/addservice.dart';
 import '../utilites/custom_button.dart';
 import '../utilites/textfield_validation.dart';
 import '../utilites/validator.dart';
@@ -15,8 +17,8 @@ class SignIn extends StatefulWidget {
   State<SignIn> createState() => _SignInState();
 }
 
-class _SignInState extends State<SignIn> with UserValidation {
-  DatabaseManager sqliteService = DatabaseManager();
+class _SignInState extends State<SignIn> with UserValidation ,Crypt{
+  // DatabaseManager sqliteService = DatabaseManager();
   TextEditingController mobileController = TextEditingController();
   TextEditingController mPinController = TextEditingController();
   final formKey = GlobalKey<FormState>();
@@ -86,13 +88,13 @@ class _SignInState extends State<SignIn> with UserValidation {
                 top: MediaQuery.of(context).size.height * 0.03),
             child: GestureDetector(
               child: const Text(
-                "Forgot your password?",
+                "Forgot your password? ",
                 style: TextStyle(
                     color: Colors.white, fontWeight: FontWeight.w500),
               ),
               onTap: (){
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => const SignUp()));
+                Navigator.pushReplacement(context,
+                    MaterialPageRoute(builder: (BuildContext context) => const Authentication()));
               },
             ),
           ),
@@ -101,29 +103,38 @@ class _SignInState extends State<SignIn> with UserValidation {
             child: CustomButton(
                 text: "SIGN IN",
                 onPressed: () async {
-                  bool userPresent = false;
-                  List<UserModel> model = await sqliteService.getUser();
-                  for (var userModel in model) {
-                    if (userModel.toJson()["mobile"] ==
-                        mobileController.text) {
-                      userPresent = true;
-                      if (userModel.toJson()["mPin"] ==
-                          mPinController.text) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('LOGIN SUCCESSFULLY')));
-                        Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => HomeScreen()));
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('INCORRECT PASSWORD')));
-                      }
+                  if(formKey.currentState!.validate()){
+                    String response = await DatabaseService.instance.getUserByData(
+                        mobileController.text,
+                        Crypt.encryptPassword(mPinController.text));
+                    if(response == '404'){
+                      Fluttertoast.showToast(msg: 'User Does Not Exist',
+                      fontSize: 20,
+                      toastLength: Toast.LENGTH_SHORT,
+                      gravity: ToastGravity.BOTTOM,
+                      timeInSecForIosWeb:  5,
+                      );
+                    }else if(response == '200'){
+                      Fluttertoast.showToast(msg: 'Login SuccessFull',
+                      fontSize: 20,
+                      toastLength: Toast.LENGTH_SHORT,
+                      gravity: ToastGravity.BOTTOM,
+                      timeInSecForIosWeb: 5,
+                      );
+                      int userid =
+                      await DatabaseService.instance.getUserByMoblie(mobileController.text);
+                      Navigator.of(context).push(MaterialPageRoute(
+                          builder: (context) =>   HomeScreen(userid: userid,)));
+                    } else if (response == '401'){
+                      Fluttertoast.showToast(
+                        msg: "Incorrect Password",
+                        fontSize: 20,
+                        toastLength: Toast.LENGTH_SHORT,
+                        gravity: ToastGravity.BOTTOM,
+                        timeInSecForIosWeb: 5,
+                      );
                     }
                   }
-                  if (userPresent == false)
-                    ScaffoldMessenger.of(context).showSnackBar(
-                               const SnackBar(content: Text('USER DOES NOT EXIST')));
                 },),
           ),
           const SizedBox(
@@ -168,5 +179,27 @@ class _SignInState extends State<SignIn> with UserValidation {
   }
 }
 
-
+// bool userPresent = false;
+// List<User> model = await sqliteService.getUser();
+// for (var userModel in model) {
+// if (userModel.toJson()["mobile"] ==
+// mobileController.text) {
+// userPresent = true;
+// if (userModel.toJson()["mPin"] == Crypt.encryptPassword(
+// mPinController.text)) {
+// ScaffoldMessenger.of(context).showSnackBar(
+// const SnackBar(content: Text('LOGIN SUCCESSFULLY')));
+// Navigator.pushReplacement(
+// context,
+// MaterialPageRoute(
+// builder: (context) => HomeScreen()));
+// } else {
+// ScaffoldMessenger.of(context).showSnackBar(
+// const SnackBar(content: Text('INCORRECT PASSWORD')));
+// }
+// }
+// }
+// if (userPresent == false)
+// ScaffoldMessenger.of(context).showSnackBar(
+// const SnackBar(content: Text('USER DOES NOT EXIST')));
 

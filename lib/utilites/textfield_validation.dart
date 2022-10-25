@@ -53,7 +53,7 @@ class SiteField extends StatelessWidget {
       margin: const EdgeInsets.only(left: 5,right: 5),
       width: MediaQuery.of(context).size.width * 0.85,
       child: TextFormField(
-        //readOnly: true,
+        readOnly: true,
         controller: textController,
         style: const TextStyle(
           backgroundColor: Color.fromRGBO(0, 0, 0, 0),

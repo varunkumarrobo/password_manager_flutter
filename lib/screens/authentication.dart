@@ -109,7 +109,7 @@ class _AuthenticationState extends State<Authentication> {
                         ),
                         IndexedStack(
                           index: index,
-                          children: const [SignIn(), SignUp()],
+                          children: [SignIn(), SignUp()],
                         )
                       ],
                     ),

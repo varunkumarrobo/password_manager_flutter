@@ -9,7 +9,8 @@ import 'add_site.dart';
 
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  int userid;
+    HomeScreen({Key? key,required this.userid}) : super(key: key);
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -17,9 +18,14 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey<ScaffoldState> _scaffoldkey = GlobalKey<ScaffoldState>();
+  TextEditingController searchController = TextEditingController();
   bool _searchDetails = false;
+  bool _isselect = false;
+  bool _searchdata = false;
   String? selectedValue;
+
   List<String> items = [
+    'all',
     'Social media',
     'Bank',
     'Personal',
@@ -66,6 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: <Widget>[
                        Expanded(
                          child: TextField(
+                           controller: searchController,
                            onSubmitted: (value) {},
                            decoration: const InputDecoration(
                                border: InputBorder.none,
@@ -75,7 +82,11 @@ class _HomeScreenState extends State<HomeScreen> {
                          ),
                        ),
                        IconButton(
-                           onPressed: () {},
+                           onPressed: () {
+                             _isselect = false;
+                             _searchdata = true;
+                             selectedValue = null;
+                           },
                            icon: const Icon(Icons.arrow_forward,
                                color: Color(0xFF0E85FF)))
                      ],
@@ -108,6 +119,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     DropdownButton2(
+                      // icon: to bo edited,
                       hint: Text(
                         'Select Category',
                         style: TextStyle(
@@ -130,6 +142,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       value: selectedValue,
                       onChanged: (value) {
                         setState(() {
+                          _searchdata = false;
+                          _isselect = true;
+                          if(selectedValue == 'Others'  ||
+                          selectedValue == 'all'){
+                            _isselect = false;
+                          }
                           selectedValue = value as String;
                         });
                       },
@@ -140,7 +158,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
                 FutureBuilder(
-                  future: DatabaseService.instance.getAllSite(),
+                  future: _isselect == true? DatabaseService.instance.getSiteFilter(widget.userid, selectedValue!):
+                      _searchdata == true
+                  ?DatabaseService.instance.getSiteFilterLike(widget.userid, searchController.text):
+                          DatabaseService.instance.getAllSite(widget.userid),
                   builder: (
                       BuildContext context,
                       AsyncSnapshot<List<Site>> snapshot,
@@ -164,8 +185,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                 onTap: (){
                                       Navigator.of(context).push(
                                           MaterialPageRoute(builder: (context)=>
-                                          SiteDetails(
+                                          AddSite(
                                             site: site[i],
+                                            appBarText: 'Site Details',
+                                            userid: widget.userid,
                                           ),
                                           ),
                                       );
@@ -188,7 +211,8 @@ class _HomeScreenState extends State<HomeScreen> {
           onPressed: () {
             Navigator.of(context)
                 .push(MaterialPageRoute(builder: (context) =>
-                AddSite(appBarText: 'Add Site',)));
+                AddSite(appBarText: 'Add Site', userid: widget.userid,)));
+            setState(() {});
           },
           child: const Icon(Icons.add),
         ),

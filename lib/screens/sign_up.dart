@@ -1,9 +1,12 @@
 
 import 'package:flutter/material.dart';
-import '../services/db_service.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:mini_app/utilites/pawrdcrypt.dart';
+import '../services/addservice.dart';
 import '../utilites/custom_button.dart';
 import '../utilites/textfield_validation.dart';
 import '../utilites/validator.dart';
+import 'authentication.dart';
 
 
 class SignUp extends StatefulWidget {
@@ -13,23 +16,23 @@ class SignUp extends StatefulWidget {
   State<SignUp> createState() => _SignUpState();
 }
 
-class _SignUpState extends State<SignUp> with UserValidation {
+class _SignUpState extends State<SignUp> with UserValidation,Crypt {
   final formKey = GlobalKey<FormState>();
    TextEditingController mobileController = TextEditingController();
   TextEditingController mPinController = TextEditingController();
   TextEditingController remPinController = TextEditingController();
-  DatabaseManager sqliteService = DatabaseManager();
+  // DatabaseManager sqliteService = DatabaseManager();
   bool  _passwordVisible = false;
-
-   @override
-  void initState() {
-    // TODO: implement initState
-     sqliteService = DatabaseManager();
-     sqliteService.initDb().whenComplete(() async{
-       setState(() {});
-     });
-    super.initState();
-  }
+  bool  passwordVisible = false;
+  //  @override
+  // void initState() {
+  //   // TODO: implement initState
+  //    sqliteService = DatabaseManager();
+  //    sqliteService.initDb().whenComplete(() async{
+  //      setState(() {});
+  //    });
+  //   super.initState();
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -99,8 +102,8 @@ class _SignUpState extends State<SignUp> with UserValidation {
             width: MediaQuery.of(context).size.width * 0.85,
             child: TextFormField(
               keyboardType: TextInputType.number,
-              controller: mPinController,
-              obscureText: !_passwordVisible,
+              controller: remPinController,
+              obscureText: !passwordVisible,
               validator: (value){
                 return mPinValidator(value);
               },
@@ -125,10 +128,10 @@ class _SignUpState extends State<SignUp> with UserValidation {
                 ),
                 suffixIcon: IconButton(onPressed: (){
                   setState(() {
-                    _passwordVisible = !_passwordVisible;
+                    passwordVisible = !passwordVisible;
                   });
                 },
-                  icon: Icon(_passwordVisible? Icons.visibility: Icons.visibility_off,
+                  icon: Icon(passwordVisible? Icons.visibility: Icons.visibility_off,
                     color: Theme.of(context).primaryColorDark,),),
               ),
             ),
@@ -140,16 +143,36 @@ class _SignUpState extends State<SignUp> with UserValidation {
             margin: const EdgeInsets.only(left: 13),
             child: CustomButton(
                 text: "SIGN UP",
-                onPressed: () {
+                onPressed: () async {
                   if (formKey.currentState!.validate()) {
-                    sqliteService
-                        .insertModel(UserModel(
-                        mobile: mobileController.text,
-                        mPin: mPinController.text))
-                        .whenComplete(() =>
-                        ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Congrats!!! Success signin to access the vault')),
-                    ));
+                    if(mPinController.text == remPinController.text){
+                      if(await DatabaseService.instance.checkExistanceUser(
+                          mobileController.text) == false){
+                        DatabaseService.instance.createUser({
+                          'phone_number': mobileController.text.trim(),
+                          'password': Crypt.encryptPassword(mPinController.text),
+                          //'password': mPinController.text.trim(),
+                        });
+                        Fluttertoast.showToast(
+                          msg: "Account Created",
+                          fontSize: 10,
+                          toastLength: Toast.LENGTH_SHORT,
+                          gravity: ToastGravity.BOTTOM,
+                          timeInSecForIosWeb: 5,
+                        );
+                        Navigator.of(context).pushReplacement(MaterialPageRoute(
+                            builder: (context) => const Authentication()));
+                      }
+                      else {
+                        Fluttertoast.showToast(
+                          msg: "Mobile Number Exists",
+                          fontSize: 20,
+                          toastLength: Toast.LENGTH_SHORT,
+                          gravity: ToastGravity.BOTTOM,
+                          timeInSecForIosWeb: 5,
+                        );
+                      }
+                    }
                   }
                 },
             ),
@@ -159,3 +182,13 @@ class _SignUpState extends State<SignUp> with UserValidation {
     );
   }
 }
+
+//
+// sqliteService
+//     .insertModel(User(
+// mobile: mobileController.text,
+// mPin: Crypt.encryptPassword(mPinController.text)))
+// .whenComplete(() =>
+// ScaffoldMessenger.of(context).showSnackBar(
+// const SnackBar(content: Text('Congrats!!! Success Sign-In to access the vault')),
+// ));

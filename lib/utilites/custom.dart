@@ -1,5 +1,8 @@
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:mini_app/utilites/passwordEncry.dart';
 import '../models/modelsdb.dart';
 import '../screens/set_details.dart';
 
@@ -91,8 +94,19 @@ class _CustomCardState extends State<CustomCard> {
                                 fontWeight: FontWeight.bold,
                                 fontSize: 20),
                           ),
-                          onTap: () {
-                            print("copied to clipboard");
+                          onTap: () async {
+                            Fluttertoast.showToast(
+                              msg: "Copied to clipboard",
+                              fontSize: 20,
+                              toastLength: Toast.LENGTH_SHORT,
+                              gravity: ToastGravity.BOTTOM,
+                              timeInSecForIosWeb: 5,
+                            );
+                            await Clipboard.setData(
+                              ClipboardData(
+                                text: Crypt.decryptePassword(widget.site.password)
+                              ),
+                            );
                           },
                         ),
                       ],

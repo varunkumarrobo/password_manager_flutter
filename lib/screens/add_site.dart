@@ -1,17 +1,22 @@
 
 import 'package:flutter/material.dart';
 import 'package:dropdown_textfield/dropdown_textfield.dart';
-import 'package:mini_app/screens/home_screen.dart';
+// import 'package:mini_app/screens/home_screen.dart';
+import '../models/modelsdb.dart';
 import '../services/addservice.dart';
+import '../utilites/passwordEncry.dart';
 
 class AddSite extends StatefulWidget {
   String appBarText;
-  AddSite({Key? key, required this.appBarText}) : super(key: key);
+  Site? site;
+  int userid;
+  AddSite({Key? key, required this.appBarText,this.site,required this.userid}) : super(key: key);
   @override
   State<AddSite> createState() => _AddSiteState();
 }
 
 class _AddSiteState extends State<AddSite> {
+
   final formKey = GlobalKey<FormState>();
   FocusNode searchFocusNode = FocusNode();
   FocusNode textFieldFocusNode = FocusNode();
@@ -25,13 +30,56 @@ class _AddSiteState extends State<AddSite> {
   TextEditingController passwordController = TextEditingController();
   TextEditingController notesController = TextEditingController();
   bool _passwordVisible = false;
+  bool _enable = true;
 
+  @override
+  void initState() {
+    super.initState();
+    if (widget.site != null) {
+      _enable = false;
+
+      uRlController.text = widget.site!.url;
+      siteNameController.text = widget.site!.siteName;
+      siteNameController.text = widget.site!.siteName;
+      sectorController.dropDownValue = DropDownValueModel(
+          name: widget.site!.sector, value: widget.site!.sector);
+      socialMediaController.dropDownValue = DropDownValueModel(
+          name: widget.site!.socialMedia, value: widget.site!.socialMedia);
+      userNameController.text = widget.site!.username;
+      passwordController.text = Crypt.decryptePassword(widget.site!.password);
+      notesController.text = widget.site!.notes;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    List<TextEditingController> controllers = [
+      uRlController,
+      siteNameController,
+      userNameController,
+      passwordController,
+      notesController
+    ];
     return Scaffold(
       appBar: AppBar(
-        title: Text("${widget.appBarText}"),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text("${widget.appBarText}"),
+            Visibility(
+              visible: widget.site != null && _enable == false,
+                child: GestureDetector(
+                  onTap: (){
+                    setState(() {
+                      _enable = true;
+                      widget.appBarText = 'Edit';
+                    });
+                  },
+                  child: const Text('Edit'),
+                ),),
+          ],
+        ),
+        backgroundColor: const Color(0xFF0E85FF),
       ),
       body: SafeArea(
         child: Stack(
@@ -59,6 +107,7 @@ class _AddSiteState extends State<AddSite> {
                             height: MediaQuery.of(context).size.height * .02,
                           ),
                           TextFormField(
+                            enabled: _enable,
                             controller: uRlController,
                           ),
                           SizedBox(
@@ -73,6 +122,7 @@ class _AddSiteState extends State<AddSite> {
                             height: MediaQuery.of(context).size.height * .02,
                           ),
                           TextFormField(
+                            enabled: _enable,
                             controller: siteNameController,
                           ),
                           SizedBox(
@@ -87,6 +137,7 @@ class _AddSiteState extends State<AddSite> {
                             height: MediaQuery.of(context).size.height * .02,
                           ),
                           DropDownTextField(
+                            isEnabled: _enable,
                             controller: sectorController,
                             listSpace: 5,
                             listPadding: ListPadding(top: 20),
@@ -100,14 +151,14 @@ class _AddSiteState extends State<AddSite> {
                             },
                             dropDownList: const [
                               DropDownValueModel(
-                                  name: 'Social media', value: "value1"),
-                              DropDownValueModel(name: 'Bank', value: "value2"),
+                                  name: 'Social media', value: "Social media"),
+                              DropDownValueModel(name: 'Bank', value: "Bank"),
                               DropDownValueModel(
-                                  name: 'Personal', value: "value3"),
+                                  name: 'Personal', value: "Personal"),
                               DropDownValueModel(
-                                  name: 'E-Commerce', value: "value4"),
+                                  name: 'E-Commerce', value: "E-Commerce"),
                               DropDownValueModel(
-                                  name: 'Others', value: "value5"),
+                                  name: 'Others', value: "Others"),
                             ],
                             dropDownItemCount: 5,
                             onChanged: (val) {},
@@ -124,6 +175,7 @@ class _AddSiteState extends State<AddSite> {
                             height: MediaQuery.of(context).size.height * .02,
                           ),
                           DropDownTextField(
+                            isEnabled: _enable,
                             controller: socialMediaController,
                             listSpace: 5,
                             listPadding: ListPadding(top: 20),
@@ -162,6 +214,7 @@ class _AddSiteState extends State<AddSite> {
                             height: MediaQuery.of(context).size.height * .02,
                           ),
                           TextFormField(
+                            enabled: _enable,
                             controller: userNameController,
                           ),
                           SizedBox(
@@ -176,6 +229,7 @@ class _AddSiteState extends State<AddSite> {
                             height: MediaQuery.of(context).size.height * .02,
                           ),
                           TextFormField(
+                            enabled: _enable,
                             keyboardType: TextInputType.text,
                             controller: passwordController,
                             obscureText: !_passwordVisible,
@@ -221,6 +275,7 @@ class _AddSiteState extends State<AddSite> {
                             height: MediaQuery.of(context).size.height * .02,
                           ),
                           TextFormField(
+                            enabled: _enable,
                             maxLines: 3,
                             controller: notesController,
                             //validator: callBack,
@@ -251,7 +306,8 @@ class _AddSiteState extends State<AddSite> {
                         ],
                       ),
                     ),
-                    Row(
+                    widget.site == null
+                        ? Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         SizedBox(
@@ -260,17 +316,17 @@ class _AddSiteState extends State<AddSite> {
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
                               shape: const RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.all(Radius.circular(1))
-                              ),
-                            ),
+                                  borderRadius:
+                                  BorderRadius.all(Radius.circular(1)))),
                             onPressed: () {
-                              uRlController.text = '';
-                              siteNameController.text = '';
-                              userNameController.text = '';
-                              passwordController.text = '';
-                              notesController.text = '';
+                              controllers.forEach((element) => element.clear());
+                              // uRlController.text = '';
+                              // siteNameController.text = '';
+                              // userNameController.text = '';
+                              // passwordController.text = '';
+                              // notesController.text = '';
                             },
-                            child: const Text("Clear"),
+                            child: const Text("Reset"),
                           ),
                         ),
                         SizedBox(
@@ -283,26 +339,56 @@ class _AddSiteState extends State<AddSite> {
                               ),
                             ),
                             onPressed: () {
-                              setState(() {
+                              // setState(() {
                                 DatabaseService.instance.createSite({
                                   "url": uRlController.text,
+                                  "userid": widget.userid,
                                   "siteName": siteNameController.text,
                                   "sector": sectorController.dropDownValue!.value,
                                   "socialMedia": socialMediaController.dropDownValue!.value,
                                   "username": userNameController.text,
-                                  "password": passwordController.text,
+                                  "password": Crypt.encryptPassword(
+                                      passwordController.text),
                                   "notes": notesController.text,
                                 });
-                                DatabaseService.instance.getAllSite();
-                              });
-                             Navigator.push(context,
-                                 MaterialPageRoute(builder: (context)=> const HomeScreen()));
+                                DatabaseService.instance.getAllSite(widget.userid!);
+                              // });
+                             Navigator.pop(context);
                             },
-                            child: const Text("Submit"),
+                            child: const Text("Save"),
                           ),
                         ),
                       ],
-                    ),
+                    ):Visibility(
+                      visible: _enable,
+                        child: SizedBox(
+                          height: MediaQuery.of(context).size.height * .07,
+                          width: MediaQuery.of(context).size.width * 1,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(0))),
+                              onPressed: (){
+                            setState(() {
+                              DatabaseService.instance.updateSite({
+                                "id": widget.site!.id,
+                                "userid": widget.userid,
+                                "url": uRlController.text,
+                                // "userid": widget.userid,
+                                "siteName": siteNameController.text,
+                                "sector": sectorController
+                                    .dropDownValue!.value,
+                                "socialMedia": socialMediaController
+                                    .dropDownValue!.value,
+                                "username": userNameController.text,
+                                "password": Crypt.encryptPassword(
+                                    passwordController.text),
+                                "notes": notesController.text,
+                              });
+                              Navigator.pop(context);
+                            });
+                          }, child: const Text("update")),
+                        ))
                   ],
                 ),
               ),
